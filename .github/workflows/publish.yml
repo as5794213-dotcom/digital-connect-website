@@ -1,0 +1,28 @@
+name: Publish scheduled blogs
+
+# Runs every day at 00:05 India time (18:35 UTC).
+# If a blog post is dated today, it makes an empty commit so Netlify rebuilds and the post goes live.
+on:
+  schedule:
+    - cron: "35 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trigger Netlify deploy when a blog is due
+        run: |
+          TODAY=$(TZ=Asia/Kolkata date +%F)
+          if grep -q "$TODAY" blogs_a.py blogs_b.py; then
+            git config user.name "blog-scheduler"
+            git config user.email "actions@github.com"
+            git commit --allow-empty -m "Publish blogs for $TODAY"
+            git push
+          else
+            echo "No blog due on $TODAY"
+          fi
